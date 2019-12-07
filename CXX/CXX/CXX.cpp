@@ -30,16 +30,19 @@
 
 
 /*
- * 研究深拷贝和浅拷贝 ok
- * 研究make_shared<>  share_ptr<> ok
- * 研究unique_ptr<> ok
- * 研究unique_lock<std::mutex> ok
+ * 研究深拷贝和浅拷贝--------------------------------------- ok
+ * 研究make_shared<>  share_ptr<> ---------------------------ok
+ * 研究unique_ptr<> -----------------------------------------ok
+ * 研究unique_lock<std::mutex>------------------------------ ok
  * 研究atomic--原子操作
- * 研究forward<>
- * 研究boost的基本使用--boots::shared_ptr<> ok
- * 研究base::bind -->绑定函数 占位符 --> OK
- * 研究std::conditional --条件类型 ok
- * 研究std::condition_variable --条件变量 ok
+ * 研究forward<>  -------------------------------------------OK
+ * 研究boost的基本使用--boots::shared_ptr<> -----------------ok
+ * 研究base::bind -->绑定函数 占位符 --> --------------------OK
+ * 研究std::conditional --条件类型 --------------------------ok
+ * 研究std::condition_variable --条件变量------------------- ok
+ * 研究可变参数
+ * 研究chrono------------------------------------------------ok
+ * 研究declType
 */
 
 using namespace std;
@@ -193,6 +196,42 @@ int getVarSum(int x,...) {
 
 	return 0;
 }
+
+
+
+//! 左值 右值  完美转发
+int leftValue(int&& x,int&& y) {
+
+	int num = x + y;
+
+	return num;
+}
+
+
+
+template<class T>
+class Forward {
+public:
+	Forward(T&& x, T&& y):_x(std::forward<T>(x)),_y(std::forward<T>(y)) {
+
+	}
+	
+	T _x, _y;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int main()
 {
@@ -395,7 +434,21 @@ int main()
 
 
 
+#if 1 //完美转发
+	int res = leftValue(2, 3);
+	std::cout << "res: " << res << std::endl;
 
+	//给定2个左值,那么函数参数中的右值引用怎么绑定到左值上
+	int x_ = 10, y_ = 20;
+	int res2 = leftValue(static_cast<int&&>(x_), static_cast<int&&>(y_));
+	int res3 = leftValue(std::move(x_), std::move(y_));
+	std::cout << "res2: " << res2 << std::endl;
+	std::cout << "res3: " << res3 << std::endl;
+
+
+	Forward<float> fff(8,9);
+	std::cout << "---" << fff._x << "---" << fff._y << std::endl;
+#endif
 
 
 
