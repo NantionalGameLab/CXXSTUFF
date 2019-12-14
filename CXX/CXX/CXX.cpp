@@ -1,8 +1,11 @@
 ﻿#include "stdafx.h"
 #define  _CRT_SECURE_NO_WARNINGS
+//! cstd
+#include <cstdarg>
 //! cxx
 #include <iostream>
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -12,7 +15,7 @@
 #include <typeindex>
 #include <typeinfo>
 #include <ctime>
-
+#include <bitset>
 
 //! boost
 #include "boost/shared_array.hpp"
@@ -21,12 +24,18 @@
 #include "boost/make_shared.hpp"
 #include "boost/make_default.hpp"
 #include "boost/make_unique.hpp"
+
+#include "xatomic.hpp"
+#include "xforward.hpp"
+#include "xunordered_map.hpp"
 //! 内存泄漏的诊断(包括定位具体的行)
 #include <crtdbg.h>
 //#ifdef _DEBUG
 //#define new  new(_NORMAL_BLOCK, __FILE__, __LINE__)
 //#endif
 
+//! vld
+#include "vld.h"
 
 
 /*
@@ -34,15 +43,23 @@
  * 研究make_shared<>  share_ptr<> ---------------------------ok
  * 研究unique_ptr<> -----------------------------------------ok
  * 研究unique_lock<std::mutex>------------------------------ ok
- * 研究atomic--原子操作
+ * 研究atomic--原子操作--------------------------------------ok
  * 研究forward<>  -------------------------------------------OK
  * 研究boost的基本使用--boots::shared_ptr<> -----------------ok
  * 研究base::bind -->绑定函数 占位符 --> --------------------OK
  * 研究std::conditional --条件类型 --------------------------ok
  * 研究std::condition_variable --条件变量------------------- ok
- * 研究可变参数
+ * 研究可变参数--------------------------------------------- ok
  * 研究chrono------------------------------------------------ok
- * 研究declType
+ * 研究declType----------------------------------------------ok
+ * 研究sizeof()----------------------------------------------ok
+ * 研究线程--------------------------------------------------ok
+ * 研究std::function<void()>---------------------------------ok
+ * 研究decltype----------------------------------------------ok
+ * 研究参数转发----------------------------------------------ok
+ * 研究unordered_map<>---------------------------------------ok
+ * 研究bitset<>----------------------------------------------ok
+ * 
 */
 
 using namespace std;
@@ -189,17 +206,39 @@ public:
 };
 
 
-//! 可变参数函数
-int getVarSum(int x,...) {
+//! 可变参数函数(备份参数)
+int getVarSum(int count,...) {
+	if (0 == count) {
+		return 0;
+	}
 
+	va_list  va;
 
+	va_start(va,count);
+	//取出参数并求和
+	int cnt = va_arg(va,int);
+	std::cout << cnt << std::endl;
+	const char* p = va_arg(va, const char*);
+	std::cout << p << std::endl;
 
+	va_end(va);
 	return 0;
 }
 
 
+//! 模板实现的可变参数
+template<class T,class ... Types>
+T addNum(Types ...args) {
+	T s = 0;
+	for (auto x : {args...})
+	{
+		s += x;
+	}
+	return s;
+}
 
-//! 左值 右值  完美转发
+
+//! 左值 右值  
 int leftValue(int&& x,int&& y) {
 
 	int num = x + y;
@@ -208,7 +247,7 @@ int leftValue(int&& x,int&& y) {
 }
 
 
-
+//! 完美转发
 template<class T>
 class Forward {
 public:
@@ -220,10 +259,13 @@ public:
 };
 
 
+//获取CPU的核心数量
+void cpu_func() {
+
+}
 
 
-
-
+std::vector<std::thread> p_cpu_threads;
 
 
 
@@ -310,7 +352,6 @@ int main()
 
 #endif
 
-
 # if 0 //浅拷贝-深拷贝
 	CopyData data1, data2;
 	data1.m_x = 1;
@@ -380,7 +421,7 @@ int main()
 #if 0  //条件变量-锁-线程-生产者--消费者
 	TypeAB ab;
 	ab.PrintAB();
-
+		
 #endif
 
 
@@ -434,7 +475,7 @@ int main()
 
 
 
-#if 1 //完美转发
+#if 0 //完美转发
 	int res = leftValue(2, 3);
 	std::cout << "res: " << res << std::endl;
 
@@ -451,16 +492,162 @@ int main()
 #endif
 
 
+#if 0 //可变参数函数
+	getVarSum(9,888,"xuxuxuxuxuxu");
+	getVarSum(2, 8,"it is var!");
+
+	int s = addNum<double>(1, 2, 3, 4, 5, 6);
+	std::cout << "s-----" << s << std::endl;
+#endif
+
+
+#if 0
+	Counter xc;
+	xc.increment();
+	xc.increment();
+	xc.increment();
+	xc.increment();
+	xc.increment();
+	xc.increment();
+	std::cout << "NOW the counter is " << xc.get() << std::endl;
+
+	MCounter mc;
+	mc.increment();
+	mc.increment();
+	std::cout << "now the mutex counter is " << mc.get() << std::endl;
+#endif
+
+
+#if 0
+	//CPU核心数量
+	std::thread t1(cpu_func);
+	t1.join();
+	std::cout << "" << std::this_thread::get_id() << std::endl;
+	std::cout << "cpu core number: " << std::thread::hardware_concurrency() << std::endl;
+
+	//CPU上最多可以开多少线程
+	for (auto m = 0;m < 18 ;m++)
+	{
+		std::thread ttt(cpu_func);
+		p_cpu_threads.emplace_back(std::move(ttt));
+	}
+	std::for_each(p_cpu_threads.begin(), p_cpu_threads.end(), std::mem_fn(&std::thread::join));
+#endif
+
+
+#if 0
+	//内存泄漏测试
+	//int* ppppp = new int();
+
+	//! 内存泄漏检测方法一
+	//_CrtDumpMemoryLeaks();
+	//! 内存泄漏方法二
+#endif
+
+
+
+#if 0
+	//测试参数转发
+	//testForward(1);
+	//int x = 999;
+	//testForward(x);
+	//testForward(std::forward<int>(x));
+
+	int y = 666;
+	//testForward(std::forward<int>(y));
+	testForward(std::forward<int&>(y));
+#endif
+
+
+
+
+#if 0
+	//! decltype
+	int x = 0;
+	decltype(x) y = 9;
+
+	std::cout << "decltype: " << typeid(decltype(x)).name() << std::endl;
+	std::vector<int> vecs;
+	std::cout << "real type: " << typeid(decltype(vecs)).name() << std::endl;
+#endif
+
+
+
+#if 0
+	//1 std::function<void()>
+	int y = 999;
+	std::function<int(int)> f_int = [=](int x)->int {return x + y; };
+
+	int res = f_int(888);
+	std::cout << "res: " << res << std::endl;
+
+
+#endif
+
+
+#if 0
+	//
+	std::list<int> my_list = { 1,3,5,7,9 };
+	for_each(my_list.begin(), my_list.end(), [] (int x){std::cout << x << std::endl; });
+
+	std::list<int> move_list = std::move(my_list);
+	for_each(move_list.begin(), move_list.end(), [](int x) {std::cout << x << std::endl; });
+	std::cout << "now size is : " << my_list.size() << std::endl;
+#endif
+
+
+#if 1
+
+	//! bitset<>的用法
+	std::bitset<8> bs(2);
+	std::cout << "bs: " << bs << std::endl;
+	std::bitset<8> bs2 = 9;
+	std::cout << "bs2: " << bs2 << std::endl;
+
+	std::vector<::bitset<31>> vec_bs;
+	vec_bs.emplace_back(0b000000011);
+
+	for (auto m = 0;m < vec_bs.size();m++){
+		std::cout << "" <<  vec_bs[m] << std::endl;
+	}
+
+
+	//^的运算
+	int re = 1 ^ 1;   //异或
+	int re2 = 1 ^ 0;  //异或
+	int res3 = ~1;   //补码(0000 0001)--->(1111 1110)	
+	int org = 2;
+	int res5 = ~org;   //补码(0000 0010)--->(1111 1101)
+	unsigned short res6 = 10;//(0000 1010)-->(1111 0101)
+	std::cout << "re: "  << re   << std::endl;
+	std::cout << "re2: " << re2  << std::endl;
+	std::cout << "re3: " << res3 << "-----------------" << std::bitset<8>(res3)  << std::endl;
+	std::cout << "re5: " << res5 << "-----------------" << std::bitset<8>(res5)  << std::endl;
+	std::cout << "re6: " << res6 << "-----------------" << std::bitset<8>(~res6)  << std::endl;
+
+
+
+
+	int zuo = 1;
+	zuo = zuo << 1;
+	std::cout << "1 << 1 : " << (zuo) << std::endl;
+	zuo = zuo << 1;
+	std::cout << "1 << 1 : " << (zuo) << std::endl;
+	zuo = zuo << 1;
+	std::cout << "1 << 1 : " << (zuo) << std::endl;
+
+	int you = 1;
+	std::cout << "1 >> 1 : " << (you >> 1) << std::endl;
+	// hash function
+	//std::unordered_map<Key,std::string> my_order;
+
+#endif
 
 
 
 
 
 
-
-
-
-	_CrtDumpMemoryLeaks();
 	system("pause");
 	return 0;
 }

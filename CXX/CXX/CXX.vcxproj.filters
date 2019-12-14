@@ -24,6 +24,15 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="xatomic.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="xforward.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="xunordered_map.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
